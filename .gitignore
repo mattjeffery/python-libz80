@@ -15,3 +15,11 @@
 *.exe
 *.out
 *.app
+
+# Python compiled files
+*.pyc
+
+# Auto-generated Opcode files
+codegen/opcodes_decl.h
+codegen/opcodes_impl.c
+codegen/opcodes_table.h
