@@ -24,5 +24,9 @@ codegen/opcodes_decl.h
 codegen/opcodes_impl.c
 codegen/opcodes_table.h
 
+# SWIG generated Python and C files
+libz80.py
+libz80_wrap.c
+
 # binaries
 codegen/mktables
