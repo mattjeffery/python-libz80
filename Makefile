@@ -10,8 +10,8 @@ libz80.so: z80.h $(OBJS)
 	cd codegen && make opcodes
 	gcc $(FLAGS) -shared -o libz80.so $(SOURCES)
 
-libz80.py: libz80.so swig
-	gcc -c $(FLAGS) $(PYTHON_INCLUDE) z80.c libz80_wrap.c
+libz80.py: swig
+	gcc -c $(FLAGS) $(PYTHON_INCLUDE) z80.c libz80_wrap.c -DSWIG -DSWIG_PYTHON
 	ld -shared libz80.so libz80_wrap.o -o _pyz80.so
 
 swig:

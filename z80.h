@@ -27,31 +27,39 @@
 #define _Z80_H_
 
 #include "stdio.h"
+#ifdef SWIG_PYTHON
+    #include <Python.h>
+#endif
 
 typedef unsigned short ushort;
 typedef unsigned char byte;
 
+#ifdef SWIG
+/** Function type to emulate data read. */
+typedef byte (*Z80DataIn) 	(void* context, ushort address);
 
+/** Function type to emulate data write. */
+typedef void (*Z80DataOut)	(void* context, ushort address, byte data);
+#else
 /** Function type to emulate data read. */
 typedef byte (*Z80DataIn) 	(int param, ushort address);
 
-
 /** Function type to emulate data write. */
 typedef void (*Z80DataOut)	(int param, ushort address, byte data);
+#endif
 
-
-/** 
+/**
  * A Z80 register set.
  * An union is used since we want independent access to the high and low bytes of the 16-bit registers.
  */
-typedef union 
+typedef union
 {
 	/** Word registers. */
 	struct
 	{
 		ushort AF, BC, DE, HL, IX, IY, SP;
 	} wr;
-	
+
 	/** Byte registers. Note that SP can't be accesed partially. */
 	struct
 	{
@@ -85,15 +93,23 @@ typedef struct
 	byte	IFF1;	/**< Interrupt Flipflop 1 */
 	byte	IFF2;	/**< Interrupt Flipflop 2 */
 	byte	IM;		/**< Instruction mode */
-	
+
 	Z80DataIn	memRead;
 	Z80DataOut	memWrite;
 	int			memParam;
-	
+
 	Z80DataIn	ioRead;
 	Z80DataOut	ioWrite;
 	int			ioParam;
-	
+
+#ifdef SWIG_PYTHON
+    /* Add some extra attributes if it's SWIG */
+    PyObject *memReadCallback;
+    PyObject *memWriteCallback;
+    PyObject *ioReadCallback;
+    PyObject *ioWriteCallback;
+#endif
+
 	byte		halted;
 	unsigned	tstates;
 
