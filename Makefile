@@ -18,8 +18,8 @@ swig:
 	swig -python libz80.i
 
 test: libz80.py
-	export PYTHONPATH=$(CURDIR):${PYTHONPATH}
-	python tests/pyz80_test.py
+	export PYTHONPATH=$(pwd):${PYTHONPATH}
+	python nosetest/testmain.py
 
 install:
 	install -m 666 libz80.so /usr/lib
