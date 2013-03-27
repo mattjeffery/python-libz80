@@ -30,3 +30,8 @@ libz80_wrap.c
 
 # binaries
 codegen/mktables
+
+# Generate test output
+*.actual
+*.expected
+testfile
