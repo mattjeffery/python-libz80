@@ -32,8 +32,20 @@ class TestSequenceFunctions(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.context.memReadCallback = 1
 
+        with self.assertRaises(TypeError):
+            self.context.memWriteCallback = 1
+
+        with self.assertRaises(TypeError):
+            self.context.ioReadCallback = 1
+
+        with self.assertRaises(TypeError):
+            self.context.ioWriteCallback = 1
+
     def test_good_callback(self):
-        self.context.memReadCallback = lambda x, y: y
+        self.context.memReadCallback = lambda p, a: a
+        self.context.memWriteCallback = lambda p, a, v: a
+        self.context.ioReadCallback = lambda p, a: a
+        self.context.ioWriteCallback = lambda p, a, v: a
 
 if __name__ == '__main__':
     unittest.main()

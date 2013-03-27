@@ -28,6 +28,63 @@
         }
 
     }
+
+    static void Z80MemoryWrite(void *ctx, ushort address, byte val)
+    {
+        /* Use the Z80 context to find the io read callback */
+        Z80Context *context = (Z80Context *) ctx;
+
+        /* if the callback is null or not callable return 0 */
+        if (context->memWriteCallback != NULL && PyCallable_Check(context->memWriteCallback)) {
+            PyObject *pyresult = \
+                PyObject_CallFunction(context->memWriteCallback, "iii", context->memParam, address, val);
+
+            if (pyresult) {
+                Py_DECREF(pyresult);
+            }
+        }
+    }
+
+    static byte Z80IoRead(void *ctx, ushort address)
+    {
+        /* Use the Z80 context to find the io read callback */
+        Z80Context *context = (Z80Context *) ctx;
+
+        /* if the callback is null or not callable return 0 */
+        if (context->ioReadCallback == NULL || !PyCallable_Check(context->ioReadCallback)) {
+            return 0;
+        }
+
+        PyObject *pyresult = \
+            PyObject_CallFunction(context->ioReadCallback, "ii", context->ioParam, address);
+
+        if (pyresult && PyInt_Check(pyresult)) {
+            /* Return the result, converting from a python int */
+            byte retval = (byte)PyInt_AsLong(pyresult);
+            Py_DECREF(pyresult);
+            return retval;
+        } else {
+            /* On error return 0 */
+            return 0;
+        }
+
+    }
+
+    static void Z80IoWrite(void *ctx, ushort address, byte val)
+    {
+        /* Use the Z80 context to find the io read callback */
+        Z80Context *context = (Z80Context *) ctx;
+
+        /* if the callback is null or not callable return 0 */
+        if (context->ioWriteCallback != NULL && PyCallable_Check(context->ioWriteCallback)) {
+            PyObject *pyresult = \
+                PyObject_CallFunction(context->ioWriteCallback, "iii", context->ioParam, address, val);
+
+            if (pyresult) {
+                Py_DECREF(pyresult);
+            }
+        }
+    }
 %}
 
 %include "exception.i"
@@ -94,12 +151,19 @@ typedef struct
     Z80Context() {
         Z80Context *z;
         z = (Z80Context *) malloc(sizeof(Z80Context));
+
+        /* Wrapper memeory handlers */
         z->memRead = &Z80MemoryRead;
+        z->memWrite = &Z80MemoryWrite;
+        z->ioRead = &Z80IoRead;
+        z->ioWrite = &Z80IoWrite;
+
         z->memReadCallback = NULL;
         z->memWriteCallback = NULL;
         z->ioReadCallback = NULL;
         z->ioWriteCallback = NULL;
         z->memParam = 0;
+        z->ioParam = 0;
         return z;
     }
 
@@ -148,7 +212,114 @@ typedef struct
         }
     }
 
-        /*
+    /* Write memory */
+    void setMemWriteCallback(PyObject* callback) {
+
+        /* Check to see if it is already set, an decref if it is */
+        if ($self->memWriteCallback != NULL) {
+            Py_DECREF($self->memWriteCallback);
+        }
+
+        Py_INCREF(callback);
+        $self->memWriteCallback = callback;
+    }
+
+    PyObject* getMemWriteCallback() {
+        return $self->memWriteCallback;
+    }
+
+    int writeMem(ushort address, byte val) {
+        /* if the callback is null or not callable return 0 */
+        if ($self->memWriteCallback == NULL || !PyCallable_Check($self->memWriteCallback)) {
+            return 0;
+        }
+
+        PyObject *pyresult = \
+            PyObject_CallFunction($self->memWriteCallback, "iii", $self->memParam, address, val);
+
+        if (pyresult) {
+            /* Return the result, converting from a python int */
+            Py_DECREF(pyresult);
+            return 1;
+        } else {
+            /* On error return 0 */
+            return 0;
+        }
+    }
+
+    /* ioRead ioory */
+    void setIoReadCallback(PyObject* callback) {
+
+        /* Check to see if it is already set, an decref if it is */
+        if ($self->ioReadCallback != NULL) {
+            Py_DECREF($self->ioReadCallback);
+        }
+
+        Py_INCREF(callback);
+        $self->ioReadCallback = callback;
+    }
+
+    PyObject* getIoReadCallback() {
+        return $self->ioReadCallback;
+    }
+
+    int readIo(ushort address, byte *result) {
+        /* if the callback is null or not callable return 0 */
+        if ($self->ioReadCallback == NULL || !PyCallable_Check($self->ioReadCallback)) {
+            return 0;
+        }
+
+        PyObject *pyresult = \
+            PyObject_CallFunction($self->ioReadCallback, "ii", $self->ioParam, address);
+
+        if (pyresult && PyInt_Check(pyresult)) {
+            /* Return the result, converting from a python int */
+            byte retval = (byte)PyInt_AsLong(pyresult);
+            Py_DECREF(pyresult);
+            *result = retval;
+            return 1;
+        } else {
+            /* On error return 0 */
+            return 0;
+        }
+    }
+
+    /* ioWrite ioory */
+    void setIoWriteCallback(PyObject* callback) {
+
+        /* Check to see if it is already set, an decref if it is */
+        if ($self->ioWriteCallback != NULL) {
+            Py_DECREF($self->ioWriteCallback);
+        }
+
+        Py_INCREF(callback);
+        $self->ioWriteCallback = callback;
+    }
+
+    PyObject* getIoWriteCallback() {
+        return $self->ioWriteCallback;
+    }
+
+    int writeIo(ushort address, byte val) {
+        /* if the callback is null or not callable return 0 */
+        if ($self->ioWriteCallback == NULL || !PyCallable_Check($self->ioWriteCallback)) {
+            return 0;
+        }
+
+        PyObject *pyresult = \
+            PyObject_CallFunction($self->ioWriteCallback, "iii", $self->ioParam, address, val);
+
+        if (pyresult) {
+            /* Return the result, converting from a python int */
+            Py_DECREF(pyresult);
+            return 1;
+        } else {
+            /* On error return 0 */
+            return 0;
+        }
+    }
+
+    /*
      * Dump the state of all the registers to stdout
      */
     void dump_z80_state(void) {
@@ -207,9 +378,21 @@ typedef struct
 
 
     %pythoncode %{
+        # memory callbacks
         __swig_getmethods__["memReadCallback"] = getMemReadCallback
         __swig_setmethods__["memReadCallback"] = setMemReadCallback
         if _newclass: memReadCallback = property(getMemReadCallback, setMemReadCallback)
+        __swig_getmethods__["memWriteCallback"] = getMemWriteCallback
+        __swig_setmethods__["memWriteCallback"] = setMemWriteCallback
+        if _newclass: memWriteCallback = property(getMemWriteCallback, setMemWriteCallback)
+
+        # io callbacks
+        __swig_getmethods__["ioReadCallback"] = getIoReadCallback
+        __swig_setmethods__["ioReadCallback"] = setIoReadCallback
+        if _newclass: ioReadCallback = property(getIoReadCallback, setIoReadCallback)
+        __swig_getmethods__["ioWriteCallback"] = getIoWriteCallback
+        __swig_setmethods__["ioWriteCallback"] = setIoWriteCallback
+        if _newclass: ioWriteCallback = property(getIoWriteCallback, setIoWriteCallback)
     %}
 
 }
