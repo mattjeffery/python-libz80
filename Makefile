@@ -1,6 +1,6 @@
 SOURCES = z80.c
 FLAGS = -fPIC -Wall -ansi -g
-PYTHON_INCLUDE = -I/usr/include/python2.6
+PYTHON_INCLUDE = -I/usr/include/python2.7
 
 force: clean all
 
@@ -17,6 +17,10 @@ libz80.py: swig
 swig:
 	swig -python libz80.i
 
+test: libz80.py
+	export PYTHONPATH=$(CURDIR):${PYTHONPATH}
+	python tests/pyz80_test.py
+
 install:
 	install -m 666 libz80.so /usr/lib
 	install -m 666 z80.h /usr/include
@@ -30,4 +34,3 @@ realclean: clean
 
 doc:	*.h *.c
 	doxygen
-
