@@ -46,7 +46,7 @@
  * an exception */
 %typemap(check) PyObject* callback {
     if (!PyCallable_Check($1)) {
-        SWIG_exception(SWIG_ValueError, "callback must be callable");
+        SWIG_exception(SWIG_TypeError, "callback must be callable");
     }
 }
 
@@ -68,7 +68,26 @@
     $result = PyInt_FromLong((long)*$1);
 }
 
-%include "z80.h"
+/** A Z80 execution context. */
+typedef struct
+{
+    Z80Regs R1;     /**< Main register set (R) */
+    Z80Regs R2;     /**< Alternate register set (R') */
+    ushort  PC;     /**< Program counter */
+    byte    R;      /**< Refresh */
+    byte    I;
+    byte    IFF1;   /**< Interrupt Flipflop 1 */
+    byte    IFF2;   /**< Interrupt Flipflop 2 */
+    byte    IM;     /**< Instruction mode */
+
+    /* Add some extra attributes if it's SWIG */
+    PyObject *memReadCallback;
+    PyObject *memWriteCallback;
+    PyObject *ioReadCallback;
+    PyObject *ioWriteCallback;
+
+} Z80Context;
+
 
 %extend Z80Context {
 
