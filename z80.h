@@ -102,14 +102,6 @@ typedef struct
 	Z80DataOut	ioWrite;
 	int			ioParam;
 
-#ifdef SWIG_PYTHON
-    /* Add some extra attributes if it's SWIG */
-    PyObject *memReadCallback;
-    PyObject *memWriteCallback;
-    PyObject *ioReadCallback;
-    PyObject *ioWriteCallback;
-#endif
-
 	byte		halted;
 	unsigned	tstates;
 
@@ -143,6 +135,14 @@ typedef struct
 	/* If true, then execute the opcode in int_vector. */
 
 	byte exec_int_vector;
+
+#ifdef SWIG_PYTHON
+    /* Add some extra attributes if it's SWIG */
+    PyObject *memReadCallback;
+    PyObject *memWriteCallback;
+    PyObject *ioReadCallback;
+    PyObject *ioWriteCallback;
+#endif
 
 } Z80Context;
 
