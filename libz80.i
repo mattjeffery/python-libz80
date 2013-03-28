@@ -99,6 +99,10 @@
     $result = PyInt_FromLong((long)$1);
 }
 
+%typemap(in) byte {
+    $1 = PyInt_AsLong($input);
+}
+
 /* Check type for callback and make sure it's callable, else raise
  * an exception */
 %typemap(check) PyObject* callback {
@@ -125,6 +129,29 @@
     $result = PyInt_FromLong((long)*$1);
 }
 
+/* Basic typedefs */
+typedef unsigned short ushort;
+typedef unsigned char byte;
+
+/**
+ * A Z80 register set.
+ * An union is used since we want independent access to the high and low bytes of the 16-bit registers.
+ */
+typedef union
+{
+    /** Word registers. */
+    struct
+    {
+        ushort AF, BC, DE, HL, IX, IY, SP;
+    } wr;
+
+    /** Byte registers. Note that SP can't be accesed partially. */
+    struct
+    {
+        byte F, A, C, B, E, D, L, H, IXl, IXh, IYl, IYh;
+    } br;
+} Z80Regs;
+
 /** A Z80 execution context. */
 typedef struct
 {
@@ -137,12 +164,55 @@ typedef struct
     byte    IFF2;   /**< Interrupt Flipflop 2 */
     byte    IM;     /**< Instruction mode */
 
+    Z80DataIn   memRead;
+    Z80DataOut  memWrite;
+    int         memParam;
+
+    Z80DataIn   ioRead;
+    Z80DataOut  ioWrite;
+    int         ioParam;
+
+    byte        halted;
+    unsigned    tstates;
+
+    %immutable;
+    /* Below are implementation details which may change without
+     * warning; they should not be relied upon by any user of this
+     * library.
+     */
+
+    /* If true, an NMI has been requested. */
+
+    byte nmi_req;
+
+    /* If true, a maskable interrupt has been requested. */
+
+    byte int_req;
+
+    /* If true, defer checking maskable interrupts for one
+     * instruction.  This is used to keep an interrupt from happening
+     * immediately after an IE instruction. */
+
+    byte defer_int;
+
+    /* When a maskable interrupt has been requested, the interrupt
+     * vector.  For interrupt mode 1, it's the opcode to execute.  For
+     * interrupt mode 2, it's the LSB of the interrupt vector address.
+     * Not used for interrupt mode 0.
+     */
+
+    byte int_vector;
+
+    /* If true, then execute the opcode in int_vector. */
+
+    byte exec_int_vector;
+    %mutable;
+
     /* Add some extra attributes if it's SWIG */
     PyObject *memReadCallback;
     PyObject *memWriteCallback;
     PyObject *ioReadCallback;
     PyObject *ioWriteCallback;
-
 } Z80Context;
 
 
