@@ -11,15 +11,14 @@ libz80.so: z80.h $(OBJS)
 	gcc $(FLAGS) -shared -o libz80.so $(SOURCES)
 
 libz80.py: swig
-	gcc -c $(FLAGS) $(PYTHON_INCLUDE) z80.c libz80_wrap.c -DSWIG -DSWIG_PYTHON
-	ld -shared libz80.so libz80_wrap.o -o _pyz80.so
+	gcc -g -c $(FLAGS) $(PYTHON_INCLUDE) $(SOURCES) libz80_wrap.c -DSWIG -DSWIG_PYTHON
+	ld -shared z80.o libz80_wrap.o -o _pyz80.so
 
 swig:
 	swig -python libz80.i
 
 test: libz80.py
-	export PYTHONPATH=$(pwd):${PYTHONPATH}
-	python nosetest/testmain.py
+	nosetests -w tests
 
 install:
 	install -m 666 libz80.so /usr/lib
