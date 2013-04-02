@@ -20,15 +20,14 @@
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
 
-import sys
 import pyz80
 import array
-import string
+import sys
+import time
+import copy
 import logging
 
 log = logging.getLogger(__name__)
-
-# static context
 
 class TestEmulator(object):
     def __init__(self):
@@ -45,8 +44,10 @@ class TestEmulator(object):
         self.context.ioWriteCallback = self._io_write_callback
 
         # 64Kb of RAM
-        self.initial_memory = array.array('c', ['\x00']*0x10000)
         self.memory = array.array('c', ['\x00']*0x10000)
+        self.blank_memory = array.array('c', ['\x00']*0x10000)
+
+        self.fill_blank_memory(self.blank_memory)
 
         self.reset()
 
@@ -78,25 +79,22 @@ class TestEmulator(object):
         """
         sys.stdout.write("PW {0:04x} {1:02x}\n".format(address, data))
 
-
-    def fill_memory(self):
+    def fill_blank_memory(self, memory):
         """
             Set the memory to default values
         """
-        log.debug("Resetting the memory")
-        for  i in range(0, 0x10000, 4):
-            self.memory[i] = chr(0xde)
-            self.memory[i+1] = chr(0xad)
-            self.memory[i+2] = chr(0xbe)
-            self.memory[i+3] = chr(0xef)
+        for i in range(0, 0x10000, 4):
+            memory[i] = chr(0xde)
+            memory[i+1] = chr(0xad)
+            memory[i+2] = chr(0xbe)
+            memory[i+3] = chr(0xef)
 
     def reset(self):
         """
             Reset the state of the emulator
         """
-        log.debug("Resetting the Z80 context")
         self.context.reset()
-        self.fill_memory()
+        self.memory = copy.copy(self.blank_memory)
 
     def dump_z80_state(self):
         """
@@ -104,24 +102,30 @@ class TestEmulator(object):
         """
         self.context.dump_z80_state()
 
-    def dump_memory_state(self, initial_memory):
+    @staticmethod
+    def dump_memory_state(memory, initial_memory):
         """
             Dump the emulators memory state
         """
         i = 0x00
+        buffer_size = 0xFF
+
         while i < 0x10000:
             # unchanged
-            if(self.memory[i] == initial_memory[i]):
-                i += 1
-                continue
+            if memory[i:i+buffer_size] == initial_memory[i:i+buffer_size]:
+                i += buffer_size
+            else:
+                while memory[i] == initial_memory[i]:
+                    i += 1
 
-            sys.stdout.write("%04x " % i)
+                sys.stdout.write("%04x " % i) # memory address
 
-            while i < 0x10000 and self.memory[i] != initial_memory[i]:
-                sys.stdout.write("%02x " % ord(self.memory[i]))
-                i += 1
+                while i < 0x10000 and memory[i] != initial_memory[i]:
+                    sys.stdout.write("%02x " % ord(memory[i]))
+                    i += 1
 
-            sys.stdout.write("-1\n")
+                sys.stdout.write("-1\n")
+                break
 
     def load_next_test(self, fileh):
         """
@@ -161,13 +165,14 @@ class TestEmulator(object):
         line = fileh.next()
         data = line.strip().split()
 
+        end_tstates = int(data.pop())
+        self.context.halted = int(data.pop())
+
         (self.context.I,
          self.context.R,
          self.context.IFF1,
          self.context.IFF2,
-         self.context.IM,
-         self.context.halted,
-         end_tstates) = \
+         self.context.IM) = \
             map(lambda x: int(x, base=16), data) # "%x %x %u %u %u %d %d"
 
         while True:
@@ -201,35 +206,50 @@ class TestEmulator(object):
             return
 
         # Save the current memory state for comparison later
-        initial_memory = self.memory[:0x10000]
+        initial_memory = copy.copy(self.memory)
 
         sys.stdout.write("{0}\n".format(test_name))
 
         log.info("Running test {0}, waiting for end_tstates={1}".format(test_name, end_tstates))
+        stime = time.time()
         while self.context.tstates < end_tstates:
             self.context.execute()
 
+        rtime = int((time.time()-stime)*1000)
+        log.info("Test {0} ran in {1}ms".format(test_name, rtime))
+
         self.dump_z80_state()
-        self.dump_memory_state(initial_memory)
+        TestEmulator.dump_memory_state(self.memory, initial_memory)
         sys.stdout.write("\n")
 
         return True
 
-def main(filename="testfile"):
+def main(fileh):
     # open test file
     emu = TestEmulator()
 
-    with open(filename) as fileh:
-        i = 0
-        while emu.run_next_test(fileh):
-            i += 1
-            pass
+    i = 0
+    stime = time.time()
+    while emu.run_next_test(fileh):
+        i += 1
+
+    rtime = int((time.time()-stime)*1000)
+    log.info("Ran all tests in {0}ms (avg. {1}ms)".format(rtime, rtime/i))
 
 if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Run the python coretest script')
+
+    parser.add_argument("testfile", help="path to the test input file", type=argparse.FileType('r'))
+
     FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
     logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
-    test_file = "../fuse_tests/fuse_files/tests.in"
+    try:
+        args = parser.parse_args()
+    except IOError:
+        parser.error("Could not open the test file specified")
 
-    main(test_file)
+    main(args.testfile)
 
