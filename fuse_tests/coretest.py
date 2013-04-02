@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  pyz80_test.py
+#  coretest.py
 #
 #  Copyright 2013 Matt Jeffery <matt@clan.se>
 #
@@ -242,9 +242,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the python coretest script')
 
     parser.add_argument("testfile", help="path to the test input file", type=argparse.FileType('r'))
-
-    FORMAT = '%(asctime)-15s %(levelname)s %(message)s'
-    logging.basicConfig(format=FORMAT, level=logging.DEBUG)
 
     try:
         args = parser.parse_args()

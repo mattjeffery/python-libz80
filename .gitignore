@@ -19,6 +19,10 @@
 # Python compiled files
 *.pyc
 
+# Python egg
+*.egg
+*.egg-info
+
 # Auto-generated Opcode files
 codegen/opcodes_decl.h
 codegen/opcodes_impl.c

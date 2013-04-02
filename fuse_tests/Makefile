@@ -1,11 +1,13 @@
-.DEFAULT: check
+.DEFAULT: all
+
+all: check check.py
 
 check: tests.expected coretest
 	./coretest fuse_files/tests.in >tests.actual
 	diff -u tests.expected tests.actual
 
 check.py: tests.expected
-	./coretest.py files/tests.in >pytests.actual
+	./coretest.py fuse_files/tests.in >pytests.actual
 	diff -u tests.expected pytests.actual
 
 clean:

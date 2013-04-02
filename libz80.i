@@ -1,4 +1,10 @@
 %module pyz80
+
+%pythoncode %{
+    __version__ = '0.1'
+    __author__ = 'Matt Jeffery <matt@clan.se>'
+%}
+
 %{
     #include <stdio.h>
     #define SWIG_FILE_WITH_INIT
