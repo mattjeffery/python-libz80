@@ -35,3 +35,4 @@ codegen/mktables
 *.actual
 *.expected
 testfile
+coretest
