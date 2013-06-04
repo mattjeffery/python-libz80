@@ -4,5 +4,6 @@ compiler:
 before_install:
   - sudo apt-get update 
   - sudo apt-get install python-dev swig
+  - pip install nose>=1.3.0
 script: make 
 script: make test
