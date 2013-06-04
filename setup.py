@@ -14,10 +14,11 @@ pyz80_module = Extension('_pyz80',
                            define_macros=[('SWIG', None), ('SWIG_PYTHON', None)],
                            )
 
-setup (name='pyz80',
-       version=__version__,
-       author=__author__,
-       description="""Python wrapper for libz80""",
-       ext_modules=[pyz80_module],
-       py_modules=["pyz80"],
-       )
+setup(name='pyz80',
+      version=__version__,
+      author=__author__,
+      description="""Python wrapper for libz80""",
+      ext_modules=[pyz80_module],
+      py_modules=["pyz80"],
+      test_suite='nose.collector',
+      tests_require=['nose>=1.0.0'])

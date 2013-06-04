@@ -3,17 +3,17 @@ FLAGS = -fPIC -Wall -ansi -g
 
 force: clean all
 
-all: libz80.so libz80.py
+all: libz80.py
 
-libz80.so: z80.h $(OBJS)
+libz80.so: z80.h
 	cd codegen && make opcodes
 	gcc $(FLAGS) -shared -o libz80.so $(SOURCES)
 
-libz80.py:
-	python setup.py build
+libz80.py: libz80.so
+	python setup.py build_ext build_py build
 
 test: libz80.py
-	nosetests -w tests
+	python setup.py nosetests
 
 install: libz80.so
 	install -m 666 libz80.so /usr/lib
@@ -21,7 +21,7 @@ install: libz80.so
 	python setup.py install
 
 clean:
-	rm -f *.o *.so core pyz80.py* *_wrap.c
+	rm -rf *.o *.so core pyz80.py* *_wrap.c build dist *.egg-info
 	cd codegen && make clean
 
 realclean: clean
