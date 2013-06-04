@@ -45,9 +45,7 @@
             PyObject *pyresult = \
                 PyObject_CallFunction(context->memWriteCallback, "iii", context->memParam, address, val);
 
-            if (pyresult) {
-                Py_DECREF(pyresult);
-            }
+            Py_XDECREF(pyresult);
         }
     }
 
@@ -86,9 +84,7 @@
             PyObject *pyresult = \
                 PyObject_CallFunction(context->ioWriteCallback, "iii", context->ioParam, address, val);
 
-            if (pyresult) {
-                Py_DECREF(pyresult);
-            }
+            Py_XDECREF(pyresult);
         }
     }
 %}
