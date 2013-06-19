@@ -15,6 +15,9 @@ libz80.py: libz80.so
 test: libz80.py
 	python setup.py nosetests
 
+coverage: libz80.py
+	coverage run --source=pyz80 setup.py nosetests
+
 install: libz80.so
 	install -m 666 libz80.so /usr/lib
 	install -m 666 z80.h /usr/include

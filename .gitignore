@@ -40,3 +40,7 @@ codegen/mktables
 *.expected
 testfile
 coretest
+
+# coveralls.io
+.coveralls.yml
+.coverage
